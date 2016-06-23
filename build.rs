@@ -2,7 +2,7 @@ extern crate num_cpus;
 
 use std::env;
 use std::fs::{self, File};
-use std::io::{self, Write};
+use std::io::{self, Write, BufRead, BufReader};
 use std::path::PathBuf;
 use std::process::Command;
 use std::str;
@@ -341,26 +341,25 @@ fn check_features(infos: &Vec<(&'static str, Option<&'static str>, &'static str)
 	}
 }
 
+fn include_required_libs() {
+	let config_mak = source().join("config.mak");
+	let file = File::open(config_mak).unwrap();
+	let reader = BufReader::new(file);
+	let extra_libs = reader.lines()
+		.find(|ref line| line.as_ref().unwrap().starts_with("EXTRALIBS"))
+		.map(|line| line.unwrap()).unwrap();
+	
+	let linker_args = extra_libs.split('=').last().unwrap().split(' ');
+	let include_libs = linker_args.filter(|v| v.starts_with("-l")).map(|flag| &flag[2..]);
+	for lib in include_libs {
+		println!("cargo:rustc-link-lib={}", lib);
+	};
+}
+
 fn main() {
 
 	if env::var("CARGO_FEATURE_BUILD").is_ok() {
-		macro_rules! link_native {
-			($feat_name:expr, $lib_name:expr) => (
-				if env::var(concat!("CARGO_FEATURE_BUILD_", $feat_name)).is_ok() {
-					println!("cargo:rustc-link-lib={}", $lib_name);
-				}
-			)
-		}
-
 		println!("cargo:rustc-link-search=native={}", search().join("lib").to_string_lossy());
-
-		if cfg!(target_os = "linux") {
-			link_native!("ZLIB", "z");
-			link_native!("LZMA", "lzma");
-			link_native!("BZ2", "bz2");
-			link_native!("DL", "dl");
-			link_native!("RT", "rt");
-		}
 
 		let build_required = fs::metadata(&search().join("lib").join("libavutil.a")).is_err();
 		if build_required {
@@ -369,6 +368,8 @@ fn main() {
 			extract().unwrap();
 			build().unwrap();
 		}
+		
+		include_required_libs();
 	}
 
 	check_features(&vec![
