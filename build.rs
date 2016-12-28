@@ -79,6 +79,25 @@ fn extract() -> io::Result<()> {
 	}
 }
 
+fn patch() -> io::Result<()> {
+	let root = env::var("CARGO_MANIFEST_DIR").unwrap();
+	let status = try!(
+		Command::new("patch")
+			.current_dir(&source())
+			.arg("-p1")
+			.arg("-i")
+			.arg(format!("{}/rtsp_read_write.patch", root))
+			.status()
+	);
+
+	if status.success() {
+		Ok(())
+	}
+	else {
+		Err(io::Error::new(io::ErrorKind::Other, "patch failed"))
+	}
+}
+
 fn build() -> io::Result<()> {
 	let mut configure = Command::new("./configure");
 	configure.current_dir(&source());
@@ -366,6 +385,7 @@ fn main() {
 			fs::create_dir_all(&output()).ok().expect("failed to create build directory");
 			fetch().unwrap();
 			extract().unwrap();
+			patch().unwrap();
 			build().unwrap();
 		}
 		

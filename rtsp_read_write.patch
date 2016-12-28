@@ -1,0 +1,37 @@
+diff --git a/libavformat/rtpproto.c b/libavformat/rtpproto.c
+index 538a7b2..e8c8558 100644
+--- a/libavformat/rtpproto.c
++++ b/libavformat/rtpproto.c
+@@ -393,7 +393,7 @@ static int rtp_open(URLContext *h, const char *uri, int flags)
+             build_udp_url(s, buf, sizeof(buf),
+                           hostname, s->rtcp_port, s->local_rtcpport,
+                           sources, block);
+-            if (ffurl_open_whitelist(&s->rtcp_hd, buf, flags,
++            if (ffurl_open_whitelist(&s->rtcp_hd, buf, flags|AVIO_FLAG_WRITE,
+                                      &h->interrupt_callback, NULL,
+                                      h->protocol_whitelist) < 0) {
+                 s->local_rtpport = s->local_rtcpport = -1;
+@@ -404,7 +404,8 @@ static int rtp_open(URLContext *h, const char *uri, int flags)
+         build_udp_url(s, buf, sizeof(buf),
+                       hostname, s->rtcp_port, s->local_rtcpport,
+                       sources, block);
+-        if (ffurl_open_whitelist(&s->rtcp_hd, buf, flags, &h->interrupt_callback,
++        if (ffurl_open_whitelist(&s->rtcp_hd, buf, flags|AVIO_FLAG_WRITE, 
++                                 &h->interrupt_callback,
+                                  NULL, h->protocol_whitelist) < 0)
+             goto fail;
+         break;
+diff --git a/libavformat/rtsp.c b/libavformat/rtsp.c
+index d710469..b37369a 100644
+--- a/libavformat/rtsp.c
++++ b/libavformat/rtsp.c
+@@ -2316,7 +2316,8 @@ static int sdp_read_header(AVFormatContext *s)
+             append_source_addrs(url, sizeof(url), "block",
+                                 rtsp_st->nb_exclude_source_addrs,
+                                 rtsp_st->exclude_source_addrs);
+-            err = ffurl_open_whitelist(&rtsp_st->rtp_handle, url, AVIO_FLAG_READ_WRITE,
++            err = ffurl_open_whitelist(&rtsp_st->rtp_handle, url,
++                           s->pb->write_flag ? AVIO_FLAG_READ_WRITE : AVIO_FLAG_READ,
+                            &s->interrupt_callback, &opts, s->protocol_whitelist);
+ 
+             av_dict_free(&opts);
