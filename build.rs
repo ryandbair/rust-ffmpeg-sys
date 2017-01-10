@@ -81,21 +81,26 @@ fn extract() -> io::Result<()> {
 
 fn patch() -> io::Result<()> {
 	let root = env::var("CARGO_MANIFEST_DIR").unwrap();
-	let status = try!(
-		Command::new("patch")
-			.current_dir(&source())
-			.arg("-p1")
-			.arg("-i")
-			.arg(format!("{}/rtsp_read_write.patch", root))
-			.status()
-	);
 
-	if status.success() {
-		Ok(())
-	}
-	else {
-		Err(io::Error::new(io::ErrorKind::Other, "patch failed"))
-	}
+	let apply_patch = |patch: &str| {
+		let status = try!(
+			Command::new("patch")
+				.current_dir(&source())
+				.arg("-p1")
+				.arg("-i")
+				.arg(format!("{}/{}", root, patch))
+				.status()
+		);
+
+		if status.success() {
+			Ok(())
+		} else {
+			Err(io::Error::new(io::ErrorKind::Other, format!("patch {} failed", patch)))
+		}
+	};
+
+	let patches: Vec<&str> = vec!["rtsp_read_write.patch", "discard_invalid_rtcp.patch"];
+	patches.into_iter().fold(Ok(()), |acc, patch| acc.and(apply_patch(&patch)))
 }
 
 fn build() -> io::Result<()> {
