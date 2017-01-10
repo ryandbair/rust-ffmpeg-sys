@@ -116,6 +116,7 @@ fn build() -> io::Result<()> {
 	if env::var("DEBUG").is_ok() {
 		configure.arg("--enable-debug");
 		configure.arg("--disable-stripping");
+		configure.arg("--optflags='-Og'");
 	}
 	else {
 		configure.arg("--disable-debug");
