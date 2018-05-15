@@ -1,0 +1,13 @@
+diff --git a/libavformat/rtsp.c b/libavformat/rtsp.c
+index c6292c5543..659fa97a28 100644
+--- a/libavformat/rtsp.c
++++ b/libavformat/rtsp.c
+@@ -56,7 +56,7 @@
+ #define READ_PACKET_TIMEOUT_S 10
+ #define MAX_TIMEOUTS READ_PACKET_TIMEOUT_S * 1000 / POLL_TIMEOUT_MS
+ #define SDP_MAX_SIZE 16384
+-#define RECVBUF_SIZE 10 * RTP_MAX_PACKET_LENGTH
++#define RECVBUF_SIZE 30 * RTP_MAX_PACKET_LENGTH
+ #define DEFAULT_REORDERING_DELAY 100000
+ 
+ #define OFFSET(x) offsetof(RTSPState, x)
